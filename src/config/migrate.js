@@ -10,13 +10,17 @@ const schema = [
         name VARCHAR(100) NOT NULL,
         email VARCHAR(150) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'user',
+        membership_tier VARCHAR(50) DEFAULT 'free',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `,
     columns: [
-      { name: 'name',       def: 'VARCHAR(100) NOT NULL' },
-      { name: 'email',      def: 'VARCHAR(150)' },
-      { name: 'password',   def: 'VARCHAR(255) NOT NULL' },
+      { name: 'name', def: 'VARCHAR(100) NOT NULL' },
+      { name: 'email', def: 'VARCHAR(150)' },
+      { name: 'password', def: 'VARCHAR(255) NOT NULL' },
+      { name: 'role', def: "VARCHAR(50) DEFAULT 'user'" },
+      { name: 'membership_tier', def: "VARCHAR(50) DEFAULT 'free'" },
       { name: 'created_at', def: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP' },
     ],
   },

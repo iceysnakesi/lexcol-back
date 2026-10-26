@@ -1,8 +1,11 @@
 const { Router } = require('express');
 const UserController = require('../controllers/user.controller');
-
 const router = Router();
 
+const verifyToken = require('../middleware/auth.middleware');
+const isAdmin = require('../middleware/admin.middleware');
+
+router.patch('/:id/role', verifyToken, isAdmin, UserController.updateRoleOrTier);
 /**
  * @swagger
  * components:
@@ -19,6 +22,12 @@ const router = Router();
  *         email:
  *           type: string
  *           example: juan@example.com
+ *         role:
+ *           type: string
+ *           example: user
+ *         membership_tier:
+ *           type: string
+ *           example: free
  *         created_at:
  *           type: string
  *           format: date-time
@@ -38,6 +47,12 @@ const router = Router();
  *         password:
  *           type: string
  *           example: secreto123
+ *         role:
+ *           type: string
+ *           example: user
+ *         membership_tier:
+ *           type: string
+ *           example: free
  *     UserUpdate:
  *       type: object
  *       required:
@@ -50,6 +65,12 @@ const router = Router();
  *         email:
  *           type: string
  *           example: juan2@example.com
+ *         role:
+ *           type: string
+ *           example: admin
+ *         membership_tier:
+ *           type: string
+ *           example: pro
  */
 
 /**
