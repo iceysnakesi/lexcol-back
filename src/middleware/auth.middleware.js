@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const verifyToken = (req, res, next) => {
+const requireAuth = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -13,12 +13,8 @@ const verifyToken = (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     try {
-        // Verify the token using your secret key from environment variables
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        // Attach the decoded user payload (contains id, etc.) to req.user
         req.user = decoded;
-
         next();
     } catch (err) {
         return res.status(401).json({
@@ -28,4 +24,28 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-module.exports = verifyToken;
+const requireAdmin = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({
+            success: false,
+            message: 'No autenticado.'
+        });
+    }
+
+    const roles = req.user.role || [];
+    const isAdmin = Array.isArray(roles) ? roles.includes('admin') : roles === 'admin';
+
+    if (!isAdmin) {
+        return res.status(403).json({
+            success: false,
+            message: 'Acceso denegado. Se requieren privilegios de administrador.'
+        });
+    }
+
+    next();
+};
+
+module.exports = {
+    requireAuth,
+    requireAdmin,
+};

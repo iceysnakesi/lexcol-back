@@ -2,10 +2,10 @@ const { Router } = require('express');
 const UserController = require('../controllers/user.controller');
 const router = Router();
 
-const verifyToken = require('../middleware/auth.middleware');
+const { requireAuth } = require('../middleware/auth.middleware');
 const isAdmin = require('../middleware/admin.middleware');
 
-router.patch('/:id/role', verifyToken, isAdmin, UserController.updateRoleOrTier);
+router.patch('/:id/role', requireAuth, isAdmin, UserController.updateRoleOrTier);
 /**
  * @swagger
  * components:

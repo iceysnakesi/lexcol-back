@@ -5,6 +5,7 @@ const swaggerSpec = require('./config/swagger');
 const runMigrations = require('./config/migrate');
 const userRoutes = require('./routes/user.routes');
 const authRoutes = require('./routes/auth.routes');
+const forumRoutes = require('./routes/forum.routes');
 const cors = require('cors');
 
 const app = express();
@@ -17,6 +18,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/users', userRoutes);
 
 app.use('/api/auth', authRoutes);
+
+app.use('/api/forum', forumRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'API corriendo', docs: '/api-docs' });
