@@ -82,6 +82,27 @@ const UserModel = {
     );
     return rows[0] || null;
   },
+  async saveResetToken(email, token, expiresAt) {
+    await pool.query(
+      'UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3',
+      [token, expiresAt, email]
+    );
+  },
+
+  async findByResetToken(token) {
+    const { rows } = await pool.query(
+      'SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()',
+      [token]
+    );
+    return rows[0] || null;
+  },
+
+  async updatePasswordAndClearToken(userId, hashedPassword) {
+    await pool.query(
+      'UPDATE users SET password = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE id = $2',
+      [hashedPassword, userId]
+    );
+  },
 };
 
 module.exports = UserModel;

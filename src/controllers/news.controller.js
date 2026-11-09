@@ -119,33 +119,6 @@ const NewsController = {
             res.status(500).json({ error: 'Failed to upload image', message: err.message });
         }
     },
-
-    async getMotd(req, res) {
-        try {
-            const motd = await NewsModel.getActiveMotd();
-            res.json(motd || null);
-        } catch (err) {
-            console.error('Get MOTD error:', err);
-            res.status(500).json({ error: 'Failed to fetch message' });
-        }
-    },
-
-    async setMotd(req, res) {
-        try {
-            const { message } = req.body;
-            if (!message || !message.trim()) {
-                return res.status(400).json({ error: 'Message is required' });
-            }
-            const created = await NewsModel.setMotd({
-                message: message.trim(),
-                created_by: req.user.id,
-            });
-            res.status(201).json(created);
-        } catch (err) {
-            console.error('Set MOTD error:', err);
-            res.status(500).json({ error: 'Failed to set message' });
-        }
-    },
 };
 
 module.exports = NewsController;

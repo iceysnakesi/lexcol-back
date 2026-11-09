@@ -158,8 +158,7 @@ const VideoController = {
             const isPrivileged =
                 !!user &&
                 (user.role === 'admin' ||
-                 user.membership_tier === 'pro' ||
-                 user.membership_tier === 'enterprise');
+                 user.membership_tier === 'pro');
 
             if (isPrivileged) {
                 return res.json({ mode: 'full', youtube_id: video.youtube_id });

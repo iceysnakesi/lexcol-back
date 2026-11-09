@@ -99,7 +99,7 @@ const UserController = {
   async changeMembership(req, res) {
     try {
       const { membership_tier } = req.body;
-      const allowed = ['free', 'pro', 'enterprise'];
+      const allowed = ['free', 'pro'];
 
       if (!allowed.includes(membership_tier)) {
         return res.status(400).json({

@@ -15,13 +15,11 @@ const upload = multer({
 
 // Public
 router.get('/', optionalAuth, NewsController.list);
-router.get('/motd', NewsController.getMotd);
 router.get('/:id', optionalAuth, NewsController.getOne);
 
 // Admin
 router.post('/', requireAuth, requireAdmin, NewsController.create);
 router.post('/upload-image', requireAuth, requireAdmin, upload.single('image'), NewsController.uploadImage);
-router.post('/motd', requireAuth, requireAdmin, NewsController.setMotd);
 router.patch('/:id/visibility', requireAuth, requireAdmin, NewsController.toggleVisibility);
 router.delete('/:id', requireAuth, requireAdmin, NewsController.remove);
 

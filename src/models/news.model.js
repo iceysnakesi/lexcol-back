@@ -58,36 +58,6 @@ const NewsModel = {
         );
         return rows[0] || null;
     },
-
-    async getActiveMotd() {
-        const { rows } = await db.query(
-            `SELECT id, message, created_at FROM motd_messages
-             WHERE is_active = TRUE
-             ORDER BY created_at DESC LIMIT 1`
-        );
-        return rows[0] || null;
-    },
-
-    async setMotd({ message, created_by }) {
-        // Deactivate all previous, insert new active one in a transaction
-        const client = await db.connect();
-        try {
-            await client.query('BEGIN');
-            await client.query('UPDATE motd_messages SET is_active = FALSE WHERE is_active = TRUE');
-            const { rows } = await client.query(
-                `INSERT INTO motd_messages (message, created_by, is_active)
-                 VALUES ($1, $2, TRUE) RETURNING *`,
-                [message, created_by]
-            );
-            await client.query('COMMIT');
-            return rows[0];
-        } catch (err) {
-            await client.query('ROLLBACK');
-            throw err;
-        } finally {
-            client.release();
-        }
-    },
 };
 
 module.exports = NewsModel;
