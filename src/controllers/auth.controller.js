@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const AuthController = {
     async login(req, res) {
         try {
-            const { email, passwordHash } = req.body; // Matches frontend LoginRequest
+            const { email, password } = req.body;
 
             // Find user by email
             const user = await UserModel.findByEmail(email);
@@ -14,14 +14,19 @@ const AuthController = {
             }
 
             // Compare password
-            const isMatch = await bcrypt.compare(passwordHash, user.password);
+            const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
                 return res.status(401).json({ message: 'Invalid email or password.' });
             }
 
-            // Generate JWT token
+            // 1. INCLUDE 'name' IN THE JWT PAYLOAD
             const accessToken = jwt.sign(
-                { id: user.id.toString(), role: user.role || 'user' },
+                {
+                    id: user.id.toString(),
+                    role: user.role || 'user',
+                    name: user.name || 'Unnamed User',
+                    membership_tier: user.membership_tier || 'free',
+                },
                 process.env.JWT_SECRET || 'fallback_secret_key',
                 { expiresIn: '1d' }
             );
@@ -33,9 +38,10 @@ const AuthController = {
                 user: {
                     id: user.id.toString(),
                     email: user.email,
-                    username: user.name,
+                    name: user.name || 'Unnamed User',     // <-- Provided for frontend expecting .name
                     role: user.role || 'user',
                     membership_tier: user.membership_tier || 'free',
+                    avatar_url: user.avatar_url || null,
                 }
             });
         } catch (err) {

@@ -4,16 +4,19 @@ const bcrypt = require('bcryptjs');
 const UserModel = {
   async findAll() {
     const { rows } = await pool.query(
-      'SELECT id, name, email, role, membership_tier, created_at FROM users ORDER BY id'
+      'SELECT id, name, email, role, membership_tier, avatar_url, created_at FROM users ORDER BY id'
     );
     return rows;
   },
 
   async findById(id) {
     const { rows } = await pool.query(
-      'SELECT id, name, email, role, membership_tier, created_at FROM users WHERE id = $1',
+      `SELECT id, name, email, role, membership_tier, avatar_url, created_at
+     FROM users
+     WHERE id = $1`,
       [id]
     );
+
     return rows[0] || null;
   },
 
@@ -37,14 +40,38 @@ const UserModel = {
   async update(id, { name, email, role, membership_tier }) {
     const { rows } = await pool.query(
       `UPDATE users 
-       SET name = COALESCE($1, name), 
-           email = COALESCE($2, email), 
-           role = COALESCE($3, role), 
-           membership_tier = COALESCE($4, membership_tier) 
-       WHERE id = $5 
-       RETURNING id, name, email, role, membership_tier, created_at`,
+     SET name = COALESCE($1, name), 
+         email = COALESCE($2, email), 
+         role = COALESCE($3, role), 
+         membership_tier = COALESCE($4, membership_tier) 
+     WHERE id = $5 
+     RETURNING id, name, email, role, membership_tier, avatar_url, created_at`,
       [name, email, role, membership_tier, id]
     );
+    return rows[0] || null;
+  },
+
+  async updateProfile(id, { name }) {
+    const { rows } = await pool.query(
+      `UPDATE users
+     SET name = $1
+     WHERE id = $2
+     RETURNING id, name, email, role, membership_tier, avatar_url`,
+      [name, id]
+    );
+
+    return rows[0] || null;
+  },
+
+  async updateAvatar(id, avatar_url) {
+    const { rows } = await pool.query(
+      `UPDATE users
+     SET avatar_url = $1
+     WHERE id = $2
+     RETURNING id, name, email, role, membership_tier, avatar_url`,
+      [avatar_url, id]
+    );
+
     return rows[0] || null;
   },
 

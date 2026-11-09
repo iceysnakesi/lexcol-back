@@ -3,9 +3,9 @@ const UserController = require('../controllers/user.controller');
 const router = Router();
 
 const { requireAuth } = require('../middleware/auth.middleware');
+const uploadAvatar = require('../middleware/uploadAvatar');
 const isAdmin = require('../middleware/admin.middleware');
 
-router.patch('/:id/role', requireAuth, isAdmin, UserController.updateRoleOrTier);
 /**
  * @swagger
  * components:
@@ -28,6 +28,9 @@ router.patch('/:id/role', requireAuth, isAdmin, UserController.updateRoleOrTier)
  *         membership_tier:
  *           type: string
  *           example: free
+ *         avatar_url:
+ *           type: string
+ *           example: "https://example.com/avatar.jpg"
  *         created_at:
  *           type: string
  *           format: date-time
@@ -71,7 +74,48 @@ router.patch('/:id/role', requireAuth, isAdmin, UserController.updateRoleOrTier)
  *         membership_tier:
  *           type: string
  *           example: pro
+ *     ProfileUpdate:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: Juan Pérez
+ *         avatar_url:
+ *           type: string
+ *           example: "https://example.com/avatar.jpg"
  */
+
+router.patch('/:id/role', requireAuth, isAdmin, UserController.updateRoleOrTier);
+
+/**
+ * @swagger
+ * /api/users/profile:
+ *   put:
+ *     summary: Actualizar perfil del usuario autenticado
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ProfileUpdate'
+ *     responses:
+ *       200:
+ *         description: Perfil actualizado exitosamente
+ *       401:
+ *         description: No autorizado
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.put('/profile', requireAuth, UserController.updateProfile);
+
+router.patch('/membership', requireAuth, UserController.changeMembership);
 
 /**
  * @swagger
@@ -140,15 +184,6 @@ router.get('/:id', UserController.getById);
  *     responses:
  *       201:
  *         description: Usuario creado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/User'
  *       400:
  *         description: Datos inválidos
  *       409:
@@ -160,7 +195,7 @@ router.post('/', UserController.create);
  * @swagger
  * /api/users/{id}:
  *   put:
- *     summary: Actualizar usuario
+ *     summary: Actualizar usuario (Admin)
  *     tags: [Users]
  *     parameters:
  *       - in: path
@@ -201,5 +236,12 @@ router.put('/:id', UserController.update);
  *         description: Usuario no encontrado
  */
 router.delete('/:id', UserController.remove);
+
+router.post(
+    '/profile/avatar',
+    requireAuth,
+    uploadAvatar.single('avatar'),
+    UserController.processAvatar
+);
 
 module.exports = router;

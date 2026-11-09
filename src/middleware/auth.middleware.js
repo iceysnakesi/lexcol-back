@@ -45,7 +45,28 @@ const requireAdmin = (req, res, next) => {
     next();
 };
 
+function optionalAuth(req, res, next) {
+    const header = req.headers.authorization;
+
+    if (!header || !header.startsWith('Bearer ')) {
+        return next(); // guest — req.user stays undefined
+    }
+
+    try {
+        const token = header.slice(7);
+        req.user = jwt.verify(
+            token,
+            process.env.JWT_SECRET || 'fallback_secret_key'
+        );
+    } catch (err) {
+        // Invalid or expired token — treat as guest rather than rejecting
+    }
+
+    next();
+};
+
 module.exports = {
     requireAuth,
     requireAdmin,
+    optionalAuth,
 };

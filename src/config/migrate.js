@@ -24,6 +24,28 @@ const schema = [
       { name: 'created_at', def: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP' },
     ],
   },
+  {
+    table: 'posts',
+    create: `
+      CREATE TABLE IF NOT EXISTS posts (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        author_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        author_name VARCHAR(150) NOT NULL,
+        is_hidden BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+    columns: [
+      { name: 'title', def: 'VARCHAR(255) NOT NULL' },
+      { name: 'content', def: 'TEXT NOT NULL' },
+      { name: 'author_id', def: 'INTEGER REFERENCES users(id) ON DELETE CASCADE' },
+      { name: 'author_name', def: 'VARCHAR(150) NOT NULL' },
+      { name: 'is_hidden', def: 'BOOLEAN DEFAULT FALSE' },
+      { name: 'created_at', def: 'TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP' },
+    ],
+  },
 ];
 
 async function runMigrations() {
