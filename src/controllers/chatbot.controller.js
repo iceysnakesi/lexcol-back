@@ -15,7 +15,7 @@ const MODEL_NAME = 'gemini-3.6-flash';
 const ChatbotController = {
     async sendMessage(req, res) {
         try {
-            const { message, chatId } = req.body;
+            const { message, chatId, isEdit } = req.body;
             const userId = req.user.id;
 
             if (!message || !message.trim()) {
@@ -24,26 +24,27 @@ const ChatbotController = {
 
             let currentChatId = chatId;
 
-            // 1. If no chatId provided, create a new chat with a title based on the first message
             if (!currentChatId) {
                 const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
                 const newChat = await ChatModel.createChat(userId, title);
                 currentChatId = newChat.id;
+            } else if (isEdit) {
+                // If editing, remove the previous AI response and update the user's message
+                await ChatModel.deleteLastAssistantMessage(currentChatId);
+                await ChatModel.updateLastUserMessage(currentChatId, message);
+            } else {
+                // Normal flow: save the new user message
+                await ChatModel.addMessage(currentChatId, 'user', message);
             }
 
-            // 2. Save the user's message to the DB
-            await ChatModel.addMessage(currentChatId, 'user', message);
-
-            // 3. Fetch history from DB to provide context to Gemini
+            // Fetch updated history
             const pastMessages = await ChatModel.getMessagesByChatId(currentChatId);
 
-            // Format history for the Gemini SDK
             const history = pastMessages.slice(0, -1).map(msg => ({
                 role: msg.role === 'user' ? 'user' : 'model',
                 parts: [{ text: msg.content }]
             }));
 
-            // 4. Initialize chat with history
             const chat = ai.chats.create({
                 model: MODEL_NAME,
                 history: history,
@@ -52,32 +53,69 @@ const ChatbotController = {
                 },
             });
 
-            // 5. Send message to Gemini
             let response;
             try {
                 response = await chat.sendMessage({ message });
             } catch (apiError) {
                 console.error('Gemini API Error:', apiError);
-                if (apiError.status === 429) {
-                    return res.status(429).json({ error: 'The AI is busy. Please wait a moment and try again.' });
+                if (apiError.status === 429 || apiError.status === 503) {
+                    return res.status(503).json({ error: 'The AI is busy or experiencing high demand. Please try again in a moment.' });
                 }
                 return res.status(500).json({ error: 'The AI service is temporarily unavailable.' });
             }
 
             const aiText = response.text;
-
-            // 6. Save AI response to DB
             await ChatModel.addMessage(currentChatId, 'assistant', aiText);
 
-            // 7. Return response along with the chatId (in case a new one was created)
-            return res.json({
-                reply: aiText,
-                chatId: currentChatId
-            });
+            return res.json({ reply: aiText, chatId: currentChatId });
 
         } catch (err) {
             console.error('Chatbot Controller Fatal Error:', err);
             return res.status(500).json({ error: 'Internal server error.' });
+        }
+    },
+
+    async regenerate(req, res) {
+        try {
+            const { chatId } = req.body;
+            if (!chatId) return res.status(400).json({ error: 'chatId is required' });
+
+            // 1. Remove the failed/old AI response
+            await ChatModel.deleteLastAssistantMessage(chatId);
+
+            // 2. Fetch history (which now ends with the user's message)
+            const pastMessages = await ChatModel.getMessagesByChatId(chatId);
+            if (pastMessages.length === 0) return res.status(400).json({ error: 'No messages to regenerate from' });
+
+            const lastUserMessage = pastMessages[pastMessages.length - 1].content;
+            const history = pastMessages.slice(0, -1).map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+            }));
+
+            const chat = ai.chats.create({
+                model: MODEL_NAME,
+                history: history,
+                config: {
+                    systemInstruction: "You are Lexcol Assistant, a helpful and friendly AI for the Lexcol platform.",
+                },
+            });
+
+            let response;
+            try {
+                response = await chat.sendMessage({ message: lastUserMessage });
+            } catch (apiError) {
+                console.error('Gemini API Error:', apiError);
+                return res.status(503).json({ error: 'The AI is busy. Please try again.' });
+            }
+
+            const aiText = response.text;
+            await ChatModel.addMessage(chatId, 'assistant', aiText);
+
+            return res.json({ reply: aiText });
+        } catch (err) {
+            console.error('Regenerate Error:', err);
+            return res.status(500).json({ error: 'Failed to regenerate.' });
         }
     },
 
@@ -88,6 +126,24 @@ const ChatbotController = {
         } catch (err) {
             console.error('Get Chats Error:', err);
             res.status(500).json({ error: 'Failed to fetch chats.' });
+        }
+    },
+
+    async deleteChat(req, res) {
+        try {
+            const chatId = req.params.id;
+            const userId = req.user.id;
+
+            const deleted = await ChatModel.deleteChat(chatId, userId);
+
+            if (!deleted) {
+                return res.status(404).json({ error: 'Chat not found or unauthorized' });
+            }
+
+            res.json({ success: true, message: 'Chat deleted successfully' });
+        } catch (err) {
+            console.error('Delete Chat Error:', err);
+            res.status(500).json({ error: 'Failed to delete chat' });
         }
     },
 

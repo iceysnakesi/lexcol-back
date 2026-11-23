@@ -9,6 +9,14 @@ const ChatModel = {
         return rows[0];
     },
 
+    async deleteChat(chatId, userId) {
+        const { rows } = await pool.query(
+            'DELETE FROM chats WHERE id = $1 AND user_id = $2 RETURNING id',
+            [chatId, userId]
+        );
+        return rows[0] || null;
+    },
+
     async addMessage(chatId, role, content) {
         await pool.query(
             'INSERT INTO chat_messages (chat_id, role, content) VALUES ($1, $2, $3)',
@@ -37,7 +45,31 @@ const ChatModel = {
             [chatId]
         );
         return rows;
+    },
+
+    async deleteLastAssistantMessage(chatId) {
+        await pool.query(`
+      DELETE FROM chat_messages 
+      WHERE id = (
+        SELECT id FROM chat_messages 
+        WHERE chat_id = $1 AND role = 'assistant' 
+        ORDER BY created_at DESC LIMIT 1
+      )
+    `, [chatId]);
+    },
+
+    async updateLastUserMessage(chatId, newContent) {
+        await pool.query(`
+      UPDATE chat_messages 
+      SET content = $1 
+      WHERE id = (
+        SELECT id FROM chat_messages 
+        WHERE chat_id = $2 AND role = 'user' 
+        ORDER BY created_at DESC LIMIT 1
+      )
+    `, [newContent, chatId]);
     }
 };
+
 
 module.exports = ChatModel;
