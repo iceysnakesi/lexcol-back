@@ -9,6 +9,7 @@ const forumRoutes = require('./routes/forum.routes');
 const cors = require('cors');
 const videoRoutes = require('./routes/video.routes');
 const newsRoutes = require('./routes/news.routes');
+const chatbotRoutes = require('./routes/chatbot.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +25,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/news', newsRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'API corriendo', docs: '/api-docs' });
